@@ -29,7 +29,8 @@ import android.widget.FrameLayout;
 public class GuideView extends FrameLayout {
 
 
-    private static final float INDICATOR_HEIGHT = 30;
+    private static final float INDICATOR_LENGTH = 20;
+    private int btnDrawable;
 
     private float density;
     private View target;
@@ -52,18 +53,23 @@ public class GuideView extends FrameLayout {
     final Paint mPaint = new Paint();
     final Paint targetPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     final Xfermode XFERMODE_CLEAR = new PorterDuffXfermode(PorterDuff.Mode.CLEAR);
-
+    private float lineLength = 40;
+    private WindowShape viewWindowShape;
 
     public interface GuideListener {
         void onDismiss(View view);
     }
 
     public enum Gravity {
-        auto, center
+        auto, center, left, right, bottom, top
     }
 
     public enum DismissType {
         outside, anywhere, targetView
+    }
+
+    public enum WindowShape {
+        circle, rectangle
     }
 
     private GuideView(Context context, View view) {
@@ -83,7 +89,7 @@ public class GuideView extends FrameLayout {
         mMessageView = new GuideMessageView(getContext());
         final int padding = (int) (5 * density);
         mMessageView.setPadding(padding, padding, padding, padding);
-        mMessageView.setColor(Color.WHITE);
+        mMessageView.setColor(Color.TRANSPARENT);
 
         addView(mMessageView, new LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT));
@@ -124,53 +130,123 @@ public class GuideView extends FrameLayout {
             Bitmap bitmap = Bitmap.createBitmap(canvas.getWidth(), canvas.getHeight(), Bitmap.Config.ARGB_8888);
             Canvas tempCanvas = new Canvas(bitmap);
 
-            float lineWidth = 3 * density;
-            float strokeCircleWidth = 3 * density;
-            float circleSize = 6 * density;
-            float circleInnerSize = 5f * density;
+            float lineWidth = 1 * density;
+            float strokeCircleWidth = 1 * density;
+            float circleSize = 10 * density;
+            float circleInnerSize = 3f * density;
 
-
+            // created the overlay
             mPaint.setColor(0xdd000000);
             mPaint.setStyle(Paint.Style.FILL);
             mPaint.setAntiAlias(true);
             tempCanvas.drawRect(canvas.getClipBounds(), mPaint);
 
+            // creating the line
             paintLine.setStyle(Paint.Style.FILL);
-            paintLine.setColor(Color.WHITE);
+            paintLine.setColor(Color.parseColor("#55BBEA"));
             paintLine.setStrokeWidth(lineWidth);
             paintLine.setAntiAlias(true);
 
+            // creating the circle
             paintCircle.setStyle(Paint.Style.STROKE);
-            paintCircle.setColor(Color.WHITE);
+            paintCircle.setColor(Color.parseColor("#55BBEA"));
             paintCircle.setStrokeCap(Paint.Cap.ROUND);
             paintCircle.setStrokeWidth(strokeCircleWidth);
             paintCircle.setAntiAlias(true);
 
+            // creating inner circle dot
             paintCircleInner.setStyle(Paint.Style.FILL);
-            paintCircleInner.setColor(0xffcccccc);
+            paintCircleInner.setStrokeCap(Paint.Cap.BUTT);
+            paintCircleInner.setColor(Color.WHITE);
             paintCircleInner.setAntiAlias(true);
 
-            marginGuide = (int) (isTop ? 15 * density : -15 * density);
+            marginGuide = getMarginGuide();
 
-            float startYLineAndCircle = (isTop ? rect.bottom : rect.top) + marginGuide;
+            float startPoint = getLineStartPoint() + marginGuide;
 
-            float x = (rect.left / 2 + rect.right / 2);
-            float stopY = (yMessageView + INDICATOR_HEIGHT * density);
+            float x = getXCoordinate();
+            float y = getYCoordinate();
 
-            tempCanvas.drawLine(x, startYLineAndCircle, x,
-                    stopY
-                    , paintLine);
+            float stopY = startPoint - lineLength * density;
+            float stopX = startPoint + lineLength * density;
+            float centerX = stopX + 10 * density;
+            float centerY = stopY - 10 * density;
 
-            tempCanvas.drawCircle(x, startYLineAndCircle, circleSize, paintCircle);
-            tempCanvas.drawCircle(x, startYLineAndCircle, circleInnerSize, paintCircleInner);
-
-
+            if (mGravity == Gravity.right || mGravity == Gravity.left) {
+                if (mGravity == Gravity.left) {
+                    stopX = startPoint - ((lineLength + INDICATOR_LENGTH) * density);
+                    centerX = stopX - 10 * density;
+                }
+                tempCanvas.drawLine(startPoint, y, stopX, y, paintLine);
+                tempCanvas.drawCircle(centerX, y, circleSize, paintCircle);
+                tempCanvas.drawCircle(centerX, y, circleInnerSize, paintCircleInner);
+            } else {
+                if (isTop) {
+                    stopY = startPoint + (lineLength * density);
+                    centerY = stopY + 10 * density;
+                }
+                tempCanvas.drawLine(x, startPoint, x,
+                        stopY
+                        , paintLine);
+                tempCanvas.drawCircle(x, centerY, circleInnerSize, paintCircleInner);
+                tempCanvas.drawCircle(x, centerY, circleSize, paintCircle);
+            }
             targetPaint.setXfermode(XFERMODE_CLEAR);
             targetPaint.setAntiAlias(true);
-
-            tempCanvas.drawRoundRect(rect, 15, 15, targetPaint);
+            int rx = 15;
+            int ry = 15;
+            if (viewWindowShape == WindowShape.circle) {
+                rx = (int) (target.getWidth() * 1.5);
+                ry = (int) (target.getHeight() * 1.5);
+            }
+            tempCanvas.drawRoundRect(rect, rx, ry, targetPaint);
             canvas.drawBitmap(bitmap, 0, 0, emptyPaint);
         }
+    }
+
+    private float getYCoordinate() {
+        if (mGravity == Gravity.top) {
+            return rect.top;
+        } else if (mGravity == Gravity.bottom) {
+            return rect.bottom;
+        } else {
+            return (rect.bottom + rect.top) / 2;
+        }
+    }
+
+    private float getXCoordinate() {
+        if (mGravity == Gravity.right) {
+            return rect.right;
+        } else if (mGravity == Gravity.left) {
+            return rect.left;
+        } else {
+            return rect.left / 2 + rect.right / 2;
+        }
+    }
+
+    private float getLineStartPoint() {
+        float lineStartPt = rect.bottom;
+        if (mGravity == Gravity.left) {
+            lineStartPt = rect.left;
+        } else if (mGravity == Gravity.right) {
+            lineStartPt = rect.right;
+        } else {
+            lineStartPt = isTop ? rect.bottom : rect.top;
+        }
+        return lineStartPt;
+    }
+
+    private int getMarginGuide() {
+        float margin = 0;
+        if (mGravity == Gravity.right || mGravity == Gravity.top) {
+            margin = 2 * density;
+        } else if (mGravity == Gravity.left || mGravity == Gravity.bottom) {
+            margin = -2 * density;
+        } else
+            margin = (isTop ? 2 * density : -2 * density);
+
+        return (int) margin;
+
     }
 
     public boolean isShowing() {
@@ -243,8 +319,13 @@ public class GuideView extends FrameLayout {
 
         if (mGravity == Gravity.center) {
             xMessageView = (int) (rect.left - mMessageView.getWidth() / 2 + target.getWidth() / 2);
-        } else
+        } else if (mGravity == Gravity.left) {
+            xMessageView = (int) rect.left - mMessageView.getWidth() - target.getWidth();
+        } else if (mGravity == Gravity.right) {
+            xMessageView = (int) (rect.right + (lineLength + INDICATOR_LENGTH) * density);
+        } else {
             xMessageView = (int) (rect.right) - mMessageView.getWidth();
+        }
 
         if (isLandscape()) {
             xMessageView -= getNavigationBarSize();
@@ -257,14 +338,20 @@ public class GuideView extends FrameLayout {
 
 
         //set message view bottom
-        if (rect.top + (INDICATOR_HEIGHT * density) > getHeight() / 2) {
-            isTop = false;
-            yMessageView = (int) (rect.top - mMessageView.getHeight() - INDICATOR_HEIGHT * density);
-        }
-        //set message view top
-        else {
-            isTop = true;
-            yMessageView = (int) (rect.top + target.getHeight() + INDICATOR_HEIGHT * density);
+        if (mGravity == Gravity.left || mGravity == Gravity.right) {
+            yMessageView = (int) (rect.top + rect.bottom) / 2 - (mMessageView.getHeight() / 2);
+        } else {
+
+            //set message view bottom
+            if (rect.top + (INDICATOR_LENGTH * density) > getHeight() / 2) {
+                isTop = false;
+                yMessageView = (int) (rect.top - mMessageView.getHeight() - INDICATOR_LENGTH * density - lineLength * density);
+            }
+            //set message view top
+            else {
+                isTop = true;
+                yMessageView = (int) (rect.top + target.getHeight() + INDICATOR_LENGTH * density + lineLength * density);
+            }
         }
 
         if (yMessageView < 0)
@@ -297,6 +384,9 @@ public class GuideView extends FrameLayout {
         mMessageView.setContentText(str);
     }
 
+    public void setBtnText(String btnText) {
+        mMessageView.setBtnText(btnText);
+    }
 
     public void setContentSpan(Spannable span) {
         mMessageView.setContentSpan(span);
@@ -310,9 +400,16 @@ public class GuideView extends FrameLayout {
         mMessageView.setContentTypeFace(typeFace);
     }
 
+    public void setBtnDrawableId(int btnDrawable) {
+        mMessageView.setButtonBackground(btnDrawable);
+    }
 
     public void setTitleTextSize(int size) {
         mMessageView.setTitleTextSize(size);
+    }
+
+    public void setLineLength(int length) {
+        lineLength = length;
     }
 
 
@@ -332,6 +429,10 @@ public class GuideView extends FrameLayout {
         private Spannable contentSpan;
         private Typeface titleTypeFace, contentTypeFace;
         private GuideListener guideListener;
+        private int lineLength;
+        private int btnDrawable;
+        private String btnText;
+        private WindowShape windowShape;
 
         public Builder(Context context) {
             this.context = context;
@@ -347,6 +448,11 @@ public class GuideView extends FrameLayout {
             return this;
         }
 
+        public Builder setWindowShape(WindowShape shape) {
+            this.windowShape = shape;
+            return this;
+        }
+
         public Builder setTitle(String title) {
             this.title = title;
             return this;
@@ -354,6 +460,11 @@ public class GuideView extends FrameLayout {
 
         public Builder setContentText(String contentText) {
             this.contentText = contentText;
+            return this;
+        }
+
+        public Builder setButtonText(String btnText) {
+            this.btnText = btnText;
             return this;
         }
 
@@ -374,6 +485,16 @@ public class GuideView extends FrameLayout {
 
         public Builder setTitleTypeFace(Typeface typeFace) {
             this.titleTypeFace = typeFace;
+            return this;
+        }
+
+        public Builder setlineLength(int length) {
+            this.lineLength = length;
+            return this;
+        }
+
+        public Builder setBtnDrawable(int drawableId) {
+            this.btnDrawable = drawableId;
             return this;
         }
 
@@ -408,6 +529,7 @@ public class GuideView extends FrameLayout {
             GuideView guideView = new GuideView(context, targetView);
             guideView.mGravity = gravity != null ? gravity : Gravity.auto;
             guideView.dismissType = dismissType != null ? dismissType : DismissType.targetView;
+            guideView.viewWindowShape = windowShape != null ? windowShape : WindowShape.rectangle;
 
             guideView.setTitle(title);
             if (contentText != null)
@@ -426,6 +548,15 @@ public class GuideView extends FrameLayout {
             }
             if (guideListener != null) {
                 guideView.mGuideListener = guideListener;
+            }
+            if (lineLength != 0) {
+                guideView.setLineLength(lineLength);
+            }
+            if (btnDrawable != 0) {
+                guideView.setBtnDrawableId(btnDrawable);
+            }
+            if (btnText != null) {
+                guideView.setBtnText(btnText);
             }
 
             return guideView;

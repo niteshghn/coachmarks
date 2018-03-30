@@ -17,6 +17,23 @@
             android:layout_marginTop="20dp"
             android:padding="10dp"
             android:text="Guide Test 1" />
+        <Button
+            android:id="@+id/view3"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="right"
+            android:layout_marginRight="80dp"
+            android:layout_marginTop="30dp"
+            android:padding="10dp"
+            android:text="Guide Test 3" />
+
+        <android.support.v7.widget.AppCompatImageView
+            android:layout_gravity="left"
+            android:id="@+id/imageView"
+            android:layout_width="30dp"
+            android:layout_marginLeft="15dp"
+            android:layout_height="30dp"
+            android:src="@drawable/ic_launcher_background"/>
 
         <ImageView
             android:id="@+id/view2"
@@ -29,16 +46,6 @@
             android:src="@mipmap/ic_launcher"
 
             />
-
-        <Button
-            android:id="@+id/view3"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="right"
-            android:layout_marginRight="80dp"
-            android:layout_marginTop="30dp"
-            android:padding="10dp"
-            android:text="Guide Test 3" />
 
         <EditText
             android:id="@+id/view4"
@@ -72,6 +79,5 @@
                 android:padding="10dp" />
 
         </LinearLayout>
-
     </LinearLayout>
 </ScrollView>

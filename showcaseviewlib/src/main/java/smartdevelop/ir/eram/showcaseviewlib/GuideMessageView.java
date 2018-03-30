@@ -6,10 +6,12 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.RectF;
 import android.graphics.Typeface;
+import android.graphics.drawable.Drawable;
 import android.text.Spannable;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -24,6 +26,7 @@ class GuideMessageView extends LinearLayout {
 
     private TextView mTitleTextView;
     private TextView mContentTextView;
+    private Button mDismissBtn;
     float density;
 
 
@@ -37,9 +40,6 @@ class GuideMessageView extends LinearLayout {
 
         mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         mPaint.setStrokeCap(Paint.Cap.ROUND);
-//        float radius = density * 3.0f;
-//        float dy = density * 2f;
-//        mPaint.setShadowLayer(radius, 0, dy, 0xFF3D3D3D);
 
         setLayerType(LAYER_TYPE_SOFTWARE, null);
 
@@ -52,16 +52,24 @@ class GuideMessageView extends LinearLayout {
         mTitleTextView = new TextView(context);
         mTitleTextView.setPadding(padding, padding, padding, paddingBetween);
         mTitleTextView.setGravity(Gravity.CENTER);
-        mTitleTextView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 18);
-        mTitleTextView.setTextColor(Color.BLACK);
+        mTitleTextView.setTypeface(null, Typeface.BOLD);
+        mTitleTextView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
+        mTitleTextView.setTextColor(Color.WHITE);
         addView(mTitleTextView, new LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
         mContentTextView = new TextView(context);
-        mContentTextView.setTextColor(Color.BLACK);
-        mContentTextView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
+        mContentTextView.setTextColor(Color.LTGRAY);
+        mContentTextView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 12);
         mContentTextView.setPadding(padding, paddingBetween, padding, padding);
         mContentTextView.setGravity(Gravity.CENTER);
         addView(mContentTextView, new LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        mDismissBtn = new Button(context);
+        mDismissBtn.setTextColor(Color.WHITE);
+        mDismissBtn.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 12);
+        mDismissBtn.setPadding(padding, paddingBetween, padding, paddingBetween);
+        mDismissBtn.setGravity(Gravity.CENTER);
+        addView(mDismissBtn, new LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
     }
 
 
@@ -102,8 +110,11 @@ class GuideMessageView extends LinearLayout {
 
         mPaint.setAlpha(255);
         mPaint.setColor(color);
-
         invalidate();
+    }
+
+    public void setButtonBackground(int drawable) {
+        mDismissBtn.setBackgroundResource(drawable);
     }
 
     int location[] = new int[2];
@@ -123,5 +134,9 @@ class GuideMessageView extends LinearLayout {
 
 
         canvas.drawRoundRect(mRect, 15, 15, mPaint);
+    }
+
+    public void setBtnText(String btnText) {
+        mDismissBtn.setText(btnText);
     }
 }
